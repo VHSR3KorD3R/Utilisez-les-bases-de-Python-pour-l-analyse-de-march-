@@ -1,16 +1,26 @@
-# This is a sample Python script.
+import requests
+from bs4 import BeautifulSoup
 
-# Press Maj+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+url = 'http://books.toscrape.com/'
 
+def get_books_url_from_page(titles):
+    books = {}
+    for title in titles:
+        temp = title.find('h3').find('a')['title']
+        book_url = url + title.find('h3').find('a')['href']
+        books.update({temp: book_url})
+    return books
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+def get_categories(soup):
+    categories = soup.find(class_="side_categories")
+    for category in categories:
+        temp = category.find('a')
+        print(type(temp))
 
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    response = requests.get(url)
+    if response.ok:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        titles = soup.find_all(class_="col-xs-6 col-sm-4 col-md-3 col-lg-3")
+        books_from_page = get_books_url_from_page(titles)
+        get_categories(soup)
