@@ -32,7 +32,6 @@ def get_book_info(url):
     review_rating = review_rating.get('class')[1]
     image_url = 'http://books.toscrape.com/' + soup.find('div',class_='item active').find('img')['src'].replace('../../', '')
     category = soup.find('ul', class_='breadcrumb').findNext('li').findNext('li').findNext('li').text
-    print(category)
     book = dict([
         ('product_page_url', url),
         ('universal_ product_code', upc),
@@ -51,6 +50,12 @@ def get_books_from_category(url):
     soup = BeautifulSoup(response.text, 'html.parser')
     titles = soup.find_all(class_="col-xs-6 col-sm-4 col-md-3 col-lg-3")
     books = get_books_url_from_page(titles)
+    next_page = soup.find(class_='next')
+    print(url)
+    if next_page is not None:
+        print('ok')
+        next_page_url = url.replace('index.html', next_page.find('a')['href'])
+        books.update(get_books_from_category(next_page_url))
     return books
 
 if __name__ == '__main__':
@@ -62,6 +67,7 @@ if __name__ == '__main__':
         all_categories_url = get_categories(soup)
         category_url = all_categories_url[1]
         books = get_books_from_category(category_url)
-        book_url = list(books.items())[1][1]
-        print(book_url)
-        get_book_info(book_url)
+        print(len(books))
+        for url in books.values():
+            print(get_book_info(url))
+
