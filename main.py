@@ -1,5 +1,7 @@
 import requests
+import pandas as pd
 from bs4 import BeautifulSoup
+
 
 
 url = 'http://books.toscrape.com/'
@@ -20,7 +22,6 @@ def get_categories(soup):
     categories = soup.find('div', class_="side_categories").find('ul').find_all('li')[1:]
     for category in categories:
         category_name = category.find("a").text.replace(' ', '').replace('\n', '')
-
         list_categories.update({category_name: url + category.find("a")["href"]})
     return list_categories
 
@@ -38,10 +39,12 @@ def get_book_info(url):
     review_rating = soup.find('p', class_='star-rating')
     review_rating = review_rating.get('class')[1]
     image_url = 'http://books.toscrape.com/' + soup.find('div',class_='item active').find('img')['src'].replace('../../', '')
-    category = soup.find('ul', class_='breadcrumb').findNext('li').findNext('li').findNext('li').text
+    category = soup.find('ul', class_='breadcrumb').findNext('li').findNext('li').findNext('li').text.replace('\n', '')
+    title = soup.find('h1').text
     book = dict([
         ('product_page_url', url),
-        ('universal_ product_code', upc),
+        ('universal_product_code', upc),
+        ('title', title),
         ('price_including_tax', price_including_tax),
         ('price_excluding_tax', price_excluding_tax),
         ('number_available', number_available),
@@ -64,7 +67,6 @@ def get_books_url_from_category(url):
         index = url.rindex("/")
         partial_url = url[0:index + 1]
         next_page_url = partial_url + next_page.find('a')['href']
-        print(next_page_url)
         books_url.update(get_books_url_from_category(next_page_url))
     return books_url
 
@@ -72,9 +74,7 @@ def get_books_from_each_category(soup):
     categories = get_categories(soup)
     books = {}
     for category_name, category_url in categories.items():
-        print(category_name)
         books.update({category_name: get_books_from_category(category_url)})
-        print(books)
     return books
 
 def get_books_from_category(category):
@@ -84,9 +84,17 @@ def get_books_from_category(category):
         books.append(get_book_info(book_url))
     return books
 
-def save_in_csv(books):
-    
-    return books
+def save_in_csv(soup):
+    all_books = get_books_from_each_category(soup)
+    header = ["product_page_url", "universal_product_code", "title", "price_including_tax", "price_excluding_tax", "number_available", "product_description", "category", "review_rating", "image_url"]
+
+    for category, books in all_books.items():
+        df = pd.DataFrame(columns=header)
+        for book in books:
+            print(book)
+            df = df.append(book, ignore_index=True)
+        df.to_csv(category + ".csv", header=header, sep=',', index=False, mode='a')
+    return 0
 
 if __name__ == '__main__':
     response = requests.get(url)
@@ -100,5 +108,5 @@ if __name__ == '__main__':
         print(len(books))
         for url in books.values():
             print(get_book_info(url))'''
-        get_books_from_each_category(soup)
+        save_in_csv(soup)
 
