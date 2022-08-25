@@ -1,6 +1,7 @@
 import requests
 import pandas as pd
 import os
+import shutil
 from bs4 import BeautifulSoup
 
 
@@ -109,12 +110,25 @@ def save_in_csv(soup):
             df.to_csv(target_dir + '\\' + category + ".csv", header=header, sep=',', index=False, mode='a')
         else:
             df.to_csv(target_dir + '\\' + category + ".csv", header=None, sep=',', index=False, mode='a')
-    return 0
+    return all_books
+
+
+def download_image(all_books):
+    for category, books in all_books.items():
+        for book in books:
+            image_url = book.get('image_url')
+            filename = book.get('title') + '.jpg'
+            r = requests.get(image_url, stream=True)
+            if r.status_code == 200:
+                r.raw.decode_content = True
+                with open(filename, 'wb') as f:
+                    shutil.copyfileobj(r.raw, f)
 
 
 if __name__ == '__main__':
     response = requests.get(url)
     if response.ok:
         soup = BeautifulSoup(response.text, 'html.parser')
-        save_in_csv(soup)
+        all_books = save_in_csv(soup)
+        download_image(all_books)
 
