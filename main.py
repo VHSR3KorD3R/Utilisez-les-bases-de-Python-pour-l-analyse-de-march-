@@ -1,5 +1,6 @@
 import requests
 import pandas as pd
+import os
 from bs4 import BeautifulSoup
 
 
@@ -27,10 +28,9 @@ def get_categories(soup):
 
 
 def get_book_info(url):
-    book = {}
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
-    description = soup.select_one("article > p").text
+    description = soup.select_one("article > p").text.replace(',', '')
     tds = soup.find('table', class_='table table-striped').findAll("td")
     upc = tds[0].text
     price_including_tax = float(tds[3].text.replace('Â£', ''))
@@ -38,7 +38,7 @@ def get_book_info(url):
     number_available = int(tds[5].text.replace('In stock (', '').replace(' available)', ''))
     review_rating = soup.find('p', class_='star-rating')
     review_rating = review_rating.get('class')[1]
-    image_url = 'http://books.toscrape.com/' + soup.find('div',class_='item active').find('img')['src'].replace('../../', '')
+    image_url = 'http://books.toscrape.com/' + soup.find('div', class_='item active').find('img')['src'].replace('../../', '')
     category = soup.find('ul', class_='breadcrumb').findNext('li').findNext('li').findNext('li').text.replace('\n', '')
     title = soup.find('h1').text
     book = dict([
@@ -75,6 +75,7 @@ def get_books_from_each_category(soup):
     books = {}
     for category_name, category_url in categories.items():
         books.update({category_name: get_books_from_category(category_url)})
+        break
     return books
 
 def get_books_from_category(category):
@@ -87,13 +88,18 @@ def get_books_from_category(category):
 def save_in_csv(soup):
     all_books = get_books_from_each_category(soup)
     header = ["product_page_url", "universal_product_code", "title", "price_including_tax", "price_excluding_tax", "number_available", "product_description", "category", "review_rating", "image_url"]
-
+    cwd = os.getcwd()
+    target_dir = cwd + '\csv'
+    if os.path.exists(target_dir) is False:
+        os.mkdir(target_dir)
     for category, books in all_books.items():
-        df = pd.DataFrame(columns=header)
+        df = pd.DataFrame()
         for book in books:
-            print(book)
             df = df.append(book, ignore_index=True)
-        df.to_csv(category + ".csv", header=header, sep=',', index=False, mode='a')
+        if os.path.exists(target_dir + '\\' + category + ".csv") is False:
+            df.to_csv(target_dir + '\\' + category + ".csv", header=header, sep=',', index=False, mode='a')
+        else:
+            df.to_csv(target_dir + '\\' + category + ".csv", header=None, sep=',', index=False, mode='a')
     return 0
 
 if __name__ == '__main__':
