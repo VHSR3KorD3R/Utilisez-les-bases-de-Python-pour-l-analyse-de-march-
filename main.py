@@ -9,6 +9,7 @@ url = 'http://books.toscrape.com/'
 
 
 def get_books_url_from_page(titles):
+    '''récupère toutes les url des livres d'une page'''
     books = {}
     for title in titles:
         temp = title.find('h3').find('a')['title']
@@ -28,6 +29,7 @@ def get_categories(soup):
 
 
 def get_book_info(url):
+    '''récupère toutes les infos des livres'''
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
     description = soup.select_one("article > p").text.replace(',', '')
@@ -57,6 +59,7 @@ def get_book_info(url):
 
 
 def get_books_url_from_category(url):
+    '''récupère toutes les url des livres d'une catégorie'''
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
     titles = soup.find_all(class_="col-xs-6 col-sm-4 col-md-3 col-lg-3")
@@ -70,7 +73,9 @@ def get_books_url_from_category(url):
         books_url.update(get_books_url_from_category(next_page_url))
     return books_url
 
+
 def get_books_from_each_category(soup):
+    '''récupère toutes les infos des tous les livres de chaque catégorie'''
     categories = get_categories(soup)
     books = {}
     for category_name, category_url in categories.items():
@@ -78,14 +83,18 @@ def get_books_from_each_category(soup):
         break
     return books
 
+
 def get_books_from_category(category):
+    '''récupère toutes les infos des tous les livres d'une catégorie'''
     books_url = get_books_url_from_category(category)
     books = []
     for book_url in books_url.values():
         books.append(get_book_info(book_url))
     return books
 
+
 def save_in_csv(soup):
+    '''sauvegarde toutes les infos des livre dans un csv'''
     all_books = get_books_from_each_category(soup)
     header = ["product_page_url", "universal_product_code", "title", "price_including_tax", "price_excluding_tax", "number_available", "product_description", "category", "review_rating", "image_url"]
     cwd = os.getcwd()
@@ -102,17 +111,10 @@ def save_in_csv(soup):
             df.to_csv(target_dir + '\\' + category + ".csv", header=None, sep=',', index=False, mode='a')
     return 0
 
+
 if __name__ == '__main__':
     response = requests.get(url)
     if response.ok:
         soup = BeautifulSoup(response.text, 'html.parser')
-        titles = soup.find_all(class_="col-xs-6 col-sm-4 col-md-3 col-lg-3")
-        books_from_page = get_books_url_from_page(titles)
-        '''all_categories_url = get_categories(soup)
-        category_url = all_categories_url[1]
-        books = get_books_from_category(category_url)
-        print(len(books))
-        for url in books.values():
-            print(get_book_info(url))'''
         save_in_csv(soup)
 
