@@ -1,7 +1,9 @@
+import re
 import requests
 import pandas as pd
 import os
 import shutil
+
 from bs4 import BeautifulSoup
 
 
@@ -81,7 +83,6 @@ def get_books_from_each_category(soup):
     books = {}
     for category_name, category_url in categories.items():
         books.update({category_name: get_books_from_category(category_url)})
-        break
     return books
 
 
@@ -109,26 +110,35 @@ def save_in_csv(soup):
         if os.path.exists(target_dir + '\\' + category + ".csv") is False:
             df.to_csv(target_dir + '\\' + category + ".csv", header=header, sep=',', index=False, mode='a')
         else:
-            df.to_csv(target_dir + '\\' + category + ".csv", header=None, sep=',', index=False, mode='a')
+            os.remove(target_dir + '\\' + category + ".csv")
+            df.to_csv(target_dir + '\\' + category + ".csv", header=header, sep=',', index=False, mode='a')
     return all_books
 
 
 def download_image(all_books):
+    cwd = os.getcwd()
+    target_dir = cwd + '\images'
+    if os.path.exists(target_dir) is False:
+        os.mkdir(target_dir)
     for category, books in all_books.items():
         for book in books:
             image_url = book.get('image_url')
+            print(image_url)
             filename = book.get('title') + '.jpg'
+            filename_cleaned = re.sub(r"[^a-zA-Z0-9 ]", "", filename)
+            print(filename)
             r = requests.get(image_url, stream=True)
             if r.status_code == 200:
                 r.raw.decode_content = True
-                with open(filename, 'wb') as f:
+                with open(target_dir + '\\' + filename_cleaned, 'wb') as f:
                     shutil.copyfileobj(r.raw, f)
 
 
 if __name__ == '__main__':
     response = requests.get(url)
     if response.ok:
+        print('début')
         soup = BeautifulSoup(response.text, 'html.parser')
         all_books = save_in_csv(soup)
         download_image(all_books)
-
+        print('fin')
