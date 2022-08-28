@@ -13,6 +13,7 @@ url = 'http://books.toscrape.com/'
 
 def get_books_url_from_page(titles):
     '''récupère toutes les url des livres d'une page'''
+    print('get_books_url_from_page')
     books = {}
     for title in titles:
         temp = title.find('h3').find('a')['title']
@@ -23,6 +24,7 @@ def get_books_url_from_page(titles):
 
 def get_categories(soup):
     '''récupère la liste des catégories'''
+    print('get_categories')
     list_categories = {}
     categories = soup.find('div', class_="side_categories").find('ul').find_all('li')[1:]
     for category in categories:
@@ -33,6 +35,7 @@ def get_categories(soup):
 
 def get_book_info(url):
     '''récupère toutes les infos des livres'''
+    print('get_book_info')
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
     description = soup.select_one("article > p").text.replace(',', '')
@@ -63,6 +66,7 @@ def get_book_info(url):
 
 def get_books_url_from_category(url):
     '''récupère toutes les url des livres d'une catégorie'''
+    print('get_books_url_from_category')
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
     titles = soup.find_all(class_="col-xs-6 col-sm-4 col-md-3 col-lg-3")
@@ -79,6 +83,7 @@ def get_books_url_from_category(url):
 
 def get_books_from_each_category(soup):
     '''récupère toutes les infos des tous les livres de chaque catégorie'''
+    print('get_books_from_each_category')
     categories = get_categories(soup)
     books = {}
     for category_name, category_url in categories.items():
@@ -88,6 +93,7 @@ def get_books_from_each_category(soup):
 
 def get_books_from_category(category):
     '''récupère toutes les infos des tous les livres d'une catégorie'''
+    print('get_books_from_category')
     books_url = get_books_url_from_category(category)
     books = []
     for book_url in books_url.values():
@@ -97,6 +103,7 @@ def get_books_from_category(category):
 
 def save_in_csv(soup):
     '''sauvegarde toutes les infos des livre dans un csv'''
+    print('save_in_csv')
     all_books = get_books_from_each_category(soup)
     header = ["product_page_url", "universal_product_code", "title", "price_including_tax", "price_excluding_tax", "number_available", "product_description", "category", "review_rating", "image_url"]
     cwd = os.getcwd()
@@ -116,6 +123,7 @@ def save_in_csv(soup):
 
 
 def download_image(all_books):
+    print('download_image')
     cwd = os.getcwd()
     target_dir = cwd + '\images'
     if os.path.exists(target_dir) is False:
