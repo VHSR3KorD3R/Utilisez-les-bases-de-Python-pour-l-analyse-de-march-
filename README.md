@@ -3,7 +3,7 @@
 ##Outil de scraping du site http://books.toscrape.com/
 
 Cet outil récupère toutes les informations disponible des livres sur le site.
-Ensuite ces données seront stockés sous la forme d'un fichier csv. Chaque cétegories de libre aura son fichier csv.
+Ensuite ces données seront stockés sous la forme d'un fichier csv. Chaque catégorie de livre aura son fichier csv.
 De plus chaque l'outil télécharge les couvertures de chaque livre.
 Voici la liste des données récupéré par le script:
 
