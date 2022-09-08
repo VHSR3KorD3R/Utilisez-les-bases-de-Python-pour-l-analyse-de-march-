@@ -6,8 +6,6 @@ import shutil
 
 from bs4 import BeautifulSoup
 
-
-
 url = 'http://books.toscrape.com/'
 
 
@@ -17,7 +15,9 @@ def get_books_url_from_page(titles):
     books = {}
     for title in titles:
         temp = title.find('h3').find('a')['title']
-        book_url = url +'catalogue/'+ title.find('h3').find('a')['href'].replace('../../../', '')
+        # trouve le titre du livre et le transforme en lien
+        book_url = url + 'catalogue/' + title.find('h3').find('a')['href'].replace('../../../', '')
+        # ajoute au dictionnaire le titre et lien du livre
         books.update({temp: book_url})
     return books
 
@@ -26,9 +26,12 @@ def get_categories(soup):
     '''récupère la liste des catégories'''
     print('get_categories')
     list_categories = {}
+    # Récupère toutes les catégories
     categories = soup.find('div', class_="side_categories").find('ul').find_all('li')[1:]
     for category in categories:
+        # Néttoie le nom de catégories
         category_name = category.find("a").text.replace(' ', '').replace('\n', '')
+        # ajoute au dictionnaire le nom de la catégorie et son lien
         list_categories.update({category_name: url + category.find("a")["href"]})
     return list_categories
 
@@ -38,15 +41,17 @@ def get_book_info(url):
     print('get_book_info')
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
-    description = soup.select_one("article > p").text.replace(',', '')
+    description = re.sub(r"[^a-zA-Z0-9 ]", "", soup.select_one("article > p").text.replace(',', ' '))
     tds = soup.find('table', class_='table table-striped').findAll("td")
     upc = tds[0].text
     price_including_tax = float(tds[3].text.replace('Â£', ''))
     price_excluding_tax = float(tds[2].text.replace('Â£', ''))
     number_available = int(tds[5].text.replace('In stock (', '').replace(' available)', ''))
+    # review rating est la note donnée au livre sous forme d'étoile, mais est stocké sous forme de chiffre en toute lettre
     review_rating = soup.find('p', class_='star-rating')
     review_rating = review_rating.get('class')[1]
-    image_url = 'http://books.toscrape.com/' + soup.find('div', class_='item active').find('img')['src'].replace('../../', '')
+    image_url = 'http://books.toscrape.com/' + soup.find('div', class_='item active').find('img')['src'].replace(
+        '../../', '')
     category = soup.find('ul', class_='breadcrumb').findNext('li').findNext('li').findNext('li').text.replace('\n', '')
     title = soup.find('h1').text
     book = dict([
@@ -77,6 +82,7 @@ def get_books_url_from_category(url):
         index = url.rindex("/")
         partial_url = url[0:index + 1]
         next_page_url = partial_url + next_page.find('a')['href']
+        #appel récursif de la fonction pour les catégories qui ont plusieurs pages de livres
         books_url.update(get_books_url_from_category(next_page_url))
     return books_url
 
@@ -105,7 +111,8 @@ def save_in_csv(soup):
     '''sauvegarde toutes les infos des livre dans un csv'''
     print('save_in_csv')
     all_books = get_books_from_each_category(soup)
-    header = ["product_page_url", "universal_product_code", "title", "price_including_tax", "price_excluding_tax", "number_available", "product_description", "category", "review_rating", "image_url"]
+    header = ["product_page_url", "universal_product_code", "title", "price_including_tax", "price_excluding_tax",
+              "number_available", "product_description", "category", "review_rating", "image_url"]
     cwd = os.getcwd()
     target_dir = cwd + '\csv'
     if os.path.exists(target_dir) is False:
@@ -113,7 +120,7 @@ def save_in_csv(soup):
     for category, books in all_books.items():
         df = pd.DataFrame()
         for book in books:
-            df = df.append(book, ignore_index=True)
+            df = pd.concat([df, pd.DataFrame([book])])
         if os.path.exists(target_dir + '\\' + category + ".csv") is False:
             df.to_csv(target_dir + '\\' + category + ".csv", header=header, sep=',', index=False, mode='a')
         else:
@@ -123,6 +130,7 @@ def save_in_csv(soup):
 
 
 def download_image(all_books):
+    '''télécahrge les images des couvertures de livre'''
     print('download_image')
     cwd = os.getcwd()
     target_dir = cwd + '\images'
@@ -131,6 +139,7 @@ def download_image(all_books):
     for category, books in all_books.items():
         for book in books:
             image_url = book.get('image_url')
+            # nettoyage du titre pour éviter des caratères qui sauterait l'extension (.jpg)
             filename_cleaned = re.sub(r"[^a-zA-Z0-9 ]", "", book.get('title')) + '.jpg'
             r = requests.get(image_url, stream=True)
             if r.status_code == 200:
