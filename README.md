@@ -1,6 +1,6 @@
 # Utilisez les bases de Python pour l'analyse de marché
 
-##Outil de scraping du site http://books.toscrape.com/
+## Outil de scraping du site http://books.toscrape.com/
 
 Cet outil récupère toutes les informations disponible des livres sur le site.
 Ensuite ces données seront stockés sous la forme d'un fichier csv. Chaque catégorie de livre aura son fichier csv.
@@ -19,7 +19,7 @@ Voici la liste des données récupéré par le script:
  - image_url: l'url de la couverture du livre
 
 
-##Utilisation de l'outil de scraping
+## Utilisation de l'outil de scraping
 
 1 - Installer Python 3 et git
 
