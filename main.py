@@ -11,7 +11,6 @@ url = 'http://books.toscrape.com/'
 
 def get_books_url_from_page(titles):
     '''récupère toutes les url des livres d'une page'''
-    print('get_books_url_from_page')
     books = {}
     for title in titles:
         temp = title.find('h3').find('a')['title']
@@ -31,6 +30,7 @@ def get_categories(soup):
     for category in categories:
         # Néttoie le nom de catégories
         category_name = category.find("a").text.replace(' ', '').replace('\n', '')
+        print('récupération de la catégorie:' + category_name)
         # ajoute au dictionnaire le nom de la catégorie et son lien
         list_categories.update({category_name: url + category.find("a")["href"]})
     return list_categories
@@ -38,7 +38,6 @@ def get_categories(soup):
 
 def get_book_info(url):
     '''récupère toutes les infos des livres'''
-    print('get_book_info')
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
     description = re.sub(r"[^a-zA-Z0-9 ]", "", soup.select_one("article > p").text.replace(',', ' '))
@@ -54,6 +53,7 @@ def get_book_info(url):
         '../../', '')
     category = soup.find('ul', class_='breadcrumb').findNext('li').findNext('li').findNext('li').text.replace('\n', '')
     title = soup.find('h1').text
+    print('get_book_info of: ' + title)
     book = dict([
         ('product_page_url', url),
         ('universal_product_code', upc),
@@ -71,7 +71,6 @@ def get_book_info(url):
 
 def get_books_url_from_category(url):
     '''récupère toutes les url des livres d'une catégorie'''
-    print('get_books_url_from_category')
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
     titles = soup.find_all(class_="col-xs-6 col-sm-4 col-md-3 col-lg-3")
@@ -89,17 +88,18 @@ def get_books_url_from_category(url):
 
 def get_books_from_each_category(soup):
     '''récupère toutes les infos des tous les livres de chaque catégorie'''
-    print('get_books_from_each_category')
     categories = get_categories(soup)
     books = {}
     for category_name, category_url in categories.items():
+        print('----------------------------------------')
+        print('get_books_from_category: ' + category_name)
+        print('----------------------------------------')
         books.update({category_name: get_books_from_category(category_url)})
     return books
 
 
 def get_books_from_category(category):
     '''récupère toutes les infos des tous les livres d'une catégorie'''
-    print('get_books_from_category')
     books_url = get_books_url_from_category(category)
     books = []
     for book_url in books_url.values():
